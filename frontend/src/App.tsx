@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 function App() {
   const [form, setForm] = useState({
     country: '',
@@ -24,7 +26,7 @@ function App() {
     setMessage('');
 
     try {
-      const res = await axios.post('http://localhost:5000/api/campaign/run', form);
+      const res = await axios.post(`${API_URL}/api/campaign/run`, form);
       setMessage('✅ Campaign Started! ID: ' + res.data.campaignId);
     } catch (error: any) {
       setMessage('❌ Error: ' + error.message);
