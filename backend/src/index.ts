@@ -9,6 +9,7 @@ import discoveryRoutes from './modules/discovery/routes/discovery.routes';
 import intelligenceRoutes from './modules/intelligence/routes/intelligence.routes';
 import contentRoutes from './modules/content/routes/content.routes';
 import publishingRoutes from './modules/publishing/routes/publishing.routes';
+import promptRoutes from './modules/prompts/routes/prompt.routes';
 import { startScheduler } from './modules/publishing/services/scheduler.service';
 
 dotenv.config();
@@ -75,6 +76,7 @@ app.use('/api/discovery', discoveryRoutes);
 app.use('/api/intelligence', intelligenceRoutes);
 app.use('/api/content', contentRoutes);
 app.use('/api/publishing', publishingRoutes);
+app.use('/api/prompts', promptRoutes);
 
 // ✅ Error handling in listen
 app.listen(PORT, () => {
