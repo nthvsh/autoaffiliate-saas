@@ -1,122 +1,96 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import React, { useState } from 'react';
+import axios from 'axios';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [form, setForm] = useState({
+    country: '',
+    niche: '',
+    category: '',
+    productName: '',
+    affiliateLink: '',
+    landingPage: '',
+  });
+
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage('');
+
+    try {
+      const res = await axios.post('http://localhost:5000/api/campaign/run', form);
+      setMessage('✅ Campaign Started! ID: ' + res.data.campaignId);
+    } catch (error: any) {
+      setMessage('❌ Error: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <div style={{ maxWidth: 600, margin: '50px auto', padding: 20, fontFamily: 'Arial' }}>
+      <h2>🚀 Start Campaign</h2>
+      <form onSubmit={handleSubmit}>
+        <div style={{ marginBottom: 15 }}>
+          <label>Country</label>
+          <select name="country" value={form.country} onChange={handleChange} required style={{ width: '100%', padding: 8 }}>
+            <option value="">Select</option>
+            <option value="United States">🇺🇸 United States</option>
+            <option value="Canada">🇨🇦 Canada</option>
+            <option value="United Kingdom">🇬🇧 United Kingdom</option>
+            <option value="Australia">🇦🇺 Australia</option>
+            <option value="New Zealand">🇳🇿 New Zealand</option>
+            <option value="Germany">🇩🇪 Germany</option>
+            <option value="Netherlands">🇳🇱 Netherlands</option>
+            <option value="Sweden">🇸🇪 Sweden</option>
+            <option value="Norway">🇳🇴 Norway</option>
+            <option value="Denmark">🇩🇰 Denmark</option>
+            <option value="Switzerland">🇨🇭 Switzerland</option>
+            <option value="Finland">🇫🇮 Finland</option>
+            <option value="Ireland">🇮🇪 Ireland</option>
+            <option value="Singapore">🇸🇬 Singapore</option>
+            <option value="United Arab Emirates">🇦🇪 United Arab Emirates</option>
+          </select>
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
+
+        <div style={{ marginBottom: 15 }}>
+          <label>Product Niche</label>
+          <input name="niche" value={form.niche} onChange={handleChange} placeholder="e.g. Dental Health" required style={{ width: '100%', padding: 8 }} />
         </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
+
+        <div style={{ marginBottom: 15 }}>
+          <label>Product Category</label>
+          <input name="category" value={form.category} onChange={handleChange} placeholder="e.g. Health & Fitness" required style={{ width: '100%', padding: 8 }} />
+        </div>
+
+        <div style={{ marginBottom: 15 }}>
+          <label>Product Name</label>
+          <input name="productName" value={form.productName} onChange={handleChange} placeholder="e.g. ProDentim" required style={{ width: '100%', padding: 8 }} />
+        </div>
+
+        <div style={{ marginBottom: 15 }}>
+          <label>Affiliate Link</label>
+          <input name="affiliateLink" value={form.affiliateLink} onChange={handleChange} placeholder="https://..." required style={{ width: '100%', padding: 8 }} />
+        </div>
+
+        <div style={{ marginBottom: 15 }}>
+          <label>Landing Page Link</label>
+          <input name="landingPage" value={form.landingPage} onChange={handleChange} placeholder="https://..." required style={{ width: '100%', padding: 8 }} />
+        </div>
+
+        <button type="submit" disabled={loading} style={{ padding: '10px 20px', background: '#007bff', color: '#fff', border: 'none', borderRadius: 5, cursor: 'pointer' }}>
+          {loading ? '⏳ Starting...' : '🚀 RUN'}
         </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      </form>
+      {message && <p style={{ marginTop: 20 }}>{message}</p>}
+    </div>
+  );
 }
 
-export default App
+export default App;
