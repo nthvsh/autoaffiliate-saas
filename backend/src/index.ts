@@ -3,6 +3,10 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { supabase } from './config/database';
 import authRoutes from './modules/saas/routes/auth.routes';
+import campaignRoutes from './modules/campaign/routes/campaign.routes';
+import complianceRoutes from './modules/compliance/routes/compliance.routes';
+import discoveryRoutes from './modules/discovery/routes/discovery.routes';
+import intelligenceRoutes from './modules/intelligence/routes/intelligence.routes';
 
 dotenv.config();
 
@@ -40,7 +44,7 @@ app.post('/api/campaign/run', async (req, res) => {
     const { data, error } = await supabase
       .from('campaigns')
       .insert([{
-        name: productName || 'Campaign',  // ✅ Yeh line add karein
+        name: productName || 'Campaign',
         country,
         niche,
         category,
@@ -62,6 +66,10 @@ app.post('/api/campaign/run', async (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/campaign', campaignRoutes);
+app.use('/api/compliance', complianceRoutes);
+app.use('/api/discovery', discoveryRoutes);
+app.use('/api/intelligence', intelligenceRoutes);
 
 // ✅ Error handling in listen
 app.listen(PORT, () => {
