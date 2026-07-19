@@ -7,6 +7,9 @@ import campaignRoutes from './modules/campaign/routes/campaign.routes';
 import complianceRoutes from './modules/compliance/routes/compliance.routes';
 import discoveryRoutes from './modules/discovery/routes/discovery.routes';
 import intelligenceRoutes from './modules/intelligence/routes/intelligence.routes';
+import contentRoutes from './modules/content/routes/content.routes';
+import publishingRoutes from './modules/publishing/routes/publishing.routes';
+import { startScheduler } from './modules/publishing/services/scheduler.service';
 
 dotenv.config();
 
@@ -70,10 +73,14 @@ app.use('/api/campaign', campaignRoutes);
 app.use('/api/compliance', complianceRoutes);
 app.use('/api/discovery', discoveryRoutes);
 app.use('/api/intelligence', intelligenceRoutes);
+app.use('/api/content', contentRoutes);
+app.use('/api/publishing', publishingRoutes);
 
 // ✅ Error handling in listen
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
+  // Start scheduler after server starts
+  startScheduler();
 }).on('error', (err) => {
   console.error('❌ Server error:', err);
 });
