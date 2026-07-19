@@ -20,9 +20,9 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// ✅ Updated CORS - Allow Vercel frontend
+// ✅ Allow all origins (for testing)
 app.use(cors({
-  origin: ['https://autoaffiliate-saas.vercel.app', 'http://localhost:5173'],
+  origin: '*',
   credentials: true
 }));
 
