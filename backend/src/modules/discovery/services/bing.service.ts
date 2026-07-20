@@ -15,19 +15,29 @@ export const searchBing = async (query: string, country: string, limit: number =
       }
     });
     
-    const results = response.data.webPages?.value?.map((item: any) => ({
-      title: item.name,
-      snippet: item.snippet,
-      url: item.url,
+    // Debug: Log full response structure
+    console.log('📥 Response Status:', response.status);
+    console.log('📊 Full Response:', JSON.stringify(response.data, null, 2).slice(0, 500));
+    
+    // Try different data paths
+    const webPages = response.data?.webPages?.value || [];
+    const results = webPages.map((item: any) => ({
+      title: item.name || item.title || 'No title',
+      snippet: item.snippet || item.description || '',
+      url: item.url || item.link || '',
       source: 'bing',
       country: country,
       found_at: new Date().toISOString()
-    })) || [];
+    }));
     
     console.log(`✅ Bing found ${results.length} results`);
     return results;
   } catch (error: any) {
     console.error('❌ Bing search error:', error.message);
+    if (error.response) {
+      console.error('Status:', error.response.status);
+      console.error('Data:', error.response.data);
+    }
     return [];
   }
 };
