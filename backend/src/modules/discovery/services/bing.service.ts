@@ -8,18 +8,12 @@ export const searchBing = async (query: string, country: string, limit: number =
     const market = country === 'US' ? 'en-US' : country === 'UK' ? 'en-GB' : 'en-IN';
     const url = `https://bing-web-search4.p.rapidapi.com/search?q=${encodeURIComponent(query)}&count=${limit}&mkt=${market}`;
     
-    console.log('📤 Bing URL:', url);
-    console.log('🔑 Bing Key:', BING_API_KEY ? '✅ Set' : '❌ Missing');
-    
     const response = await axios.get(url, {
       headers: {
         'x-rapidapi-key': BING_API_KEY,
         'x-rapidapi-host': 'bing-web-search4.p.rapidapi.com'
       }
     });
-    
-    console.log('📥 Bing Response:', response.status);
-    console.log('📊 Data keys:', Object.keys(response.data));
     
     const results = response.data.webPages?.value?.map((item: any) => ({
       title: item.name,
@@ -34,10 +28,6 @@ export const searchBing = async (query: string, country: string, limit: number =
     return results;
   } catch (error: any) {
     console.error('❌ Bing search error:', error.message);
-    if (error.response) {
-      console.error('Status:', error.response.status);
-      console.error('Data:', error.response.data);
-    }
     return [];
   }
 };
