@@ -4,8 +4,6 @@ import { Dashboard } from './pages/Dashboard';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-
 function App() {
   const [form, setForm] = useState({
     country: '',
@@ -41,7 +39,6 @@ function App() {
 
   return (
     <div>
-      {/* Navigation */}
       <div style={{ textAlign: 'center', margin: '20px 0' }}>
         <button 
           onClick={() => setShowDashboard(!showDashboard)}
