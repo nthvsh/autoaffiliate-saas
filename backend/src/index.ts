@@ -14,13 +14,20 @@ import funnelRoutes from './modules/funnel/routes/funnel.routes';
 import analyticsRoutes from './modules/analytics/routes/analytics.routes';
 import observabilityRoutes from './modules/observability/routes/observability.routes';
 import { startScheduler } from './modules/publishing/services/scheduler.service';
+import { searchYouTube, getVideoComments } from './modules/discovery/services/youtube.service';
+import { addToQueue } from './modules/publishing/services/queue.service';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+// ✅ Allow all origins (for testing)
+app.use(cors({
+  origin: '*',
+  credentials: true
+}));
+
 app.use(express.json());
 
 // ✅ Test Route - Check if server is working
@@ -40,7 +47,7 @@ app.get('/api/test-db', async (req, res) => {
   res.json({ success: true, data });
 });
 
-// ✅ Campaign Route - Direct (No import)
+// ✅ Campaign Route - With Auto Discovery
 app.post('/api/campaign/run', async (req, res) => {
   console.log('✅ Campaign route HIT!');
   console.log('Body:', req.body);
@@ -48,6 +55,7 @@ app.post('/api/campaign/run', async (req, res) => {
   try {
     const { country, niche, category, productName, affiliateLink, landingPage } = req.body;
 
+    // 1. Save campaign
     const { data, error } = await supabase
       .from('campaigns')
       .insert([{
@@ -65,9 +73,61 @@ app.post('/api/campaign/run', async (req, res) => {
 
     if (error) throw error;
 
-    res.json({ success: true, campaignId: data[0].id, message: 'Campaign started!' });
+    const campaignId = data[0].id;
+    console.log(`✅ Campaign saved: ${campaignId}`);
+
+    // 2. 🔥 START DISCOVERY AUTOMATICALLY
+    console.log(`🔍 Starting discovery for campaign: ${campaignId}`);
+    
+    // Run discovery in background (don't await - let it run async)
+    (async () => {
+      try {
+        console.log(`📺 Searching YouTube for: ${niche}`);
+        const videos = await searchYouTube(niche, 5);
+        
+        let totalComments = 0;
+        for (const video of videos) {
+          console.log(`💬 Fetching comments for video: ${video.id}`);
+          const comments = await getVideoComments(video.id, 20);
+          
+          for (const comment of comments) {
+            // Save to audience
+            await supabase.from('audience').insert([{
+              campaign_id: campaignId,
+              username: comment.author,
+              platform: 'youtube',
+              country: country,
+              post_content: comment.text,
+              found_at: new Date().toISOString()
+            }]);
+            
+            // Add to publishing queue
+            addToQueue({
+              content: comment.text,
+              platform: 'youtube',
+              scheduledTime: new Date(),
+              priority: 'medium'
+            });
+            
+            totalComments++;
+          }
+        }
+        
+        console.log(`✅ Discovery complete! Found ${totalComments} comments from ${videos.length} videos`);
+      } catch (err) {
+        console.error('❌ Background discovery error:', err);
+      }
+    })();
+
+    // 3. Return response immediately
+    res.json({ 
+      success: true, 
+      campaignId: campaignId, 
+      message: 'Campaign started! Discovery running in background.' 
+    });
+    
   } catch (error: any) {
-    console.error('Error:', error);
+    console.error('❌ Error:', error);
     res.status(500).json({ error: error.message });
   }
 });
