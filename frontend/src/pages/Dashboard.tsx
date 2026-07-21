@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -13,11 +13,12 @@ interface PageView {
 
 export const Dashboard = () => {
   const [views, setViews] = useState<PageView[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [campaignId, setCampaignId] = useState('');
 
   const fetchViews = async (id: string) => {
     try {
+      setLoading(true);
       const res = await axios.get(`${API_URL}/api/analytics/views/${id}`);
       setViews(res.data.data || []);
     } catch (error) {
@@ -30,7 +31,6 @@ export const Dashboard = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (campaignId) {
-      setLoading(true);
       fetchViews(campaignId);
     }
   };
@@ -47,9 +47,9 @@ export const Dashboard = () => {
           placeholder="Enter Campaign ID"
           value={campaignId}
           onChange={(e) => setCampaignId(e.target.value)}
-          style={{ padding: 10, width: '70%', marginRight: 10 }}
+          style={{ padding: 10, width: '70%', marginRight: 10, border: '1px solid #ccc', borderRadius: 5 }}
         />
-        <button type="submit" style={{ padding: '10px 20px', background: '#007bff', color: '#fff', border: 'none', borderRadius: 5 }}>
+        <button type="submit" style={{ padding: '10px 20px', background: '#007bff', color: '#fff', border: 'none', borderRadius: 5, cursor: 'pointer' }}>
           Show Views
         </button>
       </form>
