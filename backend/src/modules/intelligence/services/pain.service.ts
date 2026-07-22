@@ -1,11 +1,11 @@
 // Detect pain points from text
 export const detectPainPoints = (text: string) => {
   const painKeywords = {
-    urgent: ['emergency', 'immediate', 'urgent', 'asap', 'quick'],
-    emotional: ['frustrated', 'anxious', 'scared', 'worried', 'depressed'],
-    financial: ['expensive', 'cost', 'budget', 'cheap', 'afford'],
-    health: ['pain', 'symptom', 'treatment', 'disease', 'doctor'],
-    social: ['embarrassed', 'ashamed', 'judged', 'alone'],
+    urgent: ['emergency', 'immediate', 'urgent', 'asap', 'quick', 'help', 'please', 'now'],
+    emotional: ['frustrated', 'anxious', 'scared', 'worried', 'depressed', 'tired', 'exhausted', 'painful'],
+    financial: ['expensive', 'cost', 'budget', 'cheap', 'afford', 'price', 'money', 'saving'],
+    health: ['pain', 'symptom', 'treatment', 'disease', 'doctor', 'dental', 'teeth', 'gums', 'tooth'],
+    social: ['embarrassed', 'ashamed', 'judged', 'alone', 'weird', 'strange', 'different'],
   };
 
   let scores = { urgent: 0, emotional: 0, financial: 0, health: 0, social: 0 };
