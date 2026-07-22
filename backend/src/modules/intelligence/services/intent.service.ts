@@ -1,7 +1,7 @@
 export const scoreIntent = (text: string) => {
-  const buyerKeywords = ['buy', 'purchase', 'best', 'recommend', 'review', 'price', 'affordable'];
-  const researcherKeywords = ['how to', 'what is', 'why', 'difference', 'vs', 'guide'];
-  const curiousKeywords = ['just', 'maybe', 'i think', 'curious', 'wondering'];
+  const buyerKeywords = ['buy', 'purchase', 'best', 'recommend', 'review', 'price', 'affordable', 'cost', 'cheap', 'expensive'];
+  const researcherKeywords = ['how to', 'what is', 'why', 'difference', 'vs', 'guide', 'step', 'tutorial', 'learn'];
+  const curiousKeywords = ['just', 'maybe', 'i think', 'curious', 'wondering', 'interesting', 'seems'];
 
   let score = 0;
   const lowerText = text.toLowerCase();
