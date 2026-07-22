@@ -14,11 +14,12 @@ User intent: ${intent.level} (score: ${intent.score})
 
 Generate a personalized, helpful reply that:
 1. Shows empathy for their pain
-2. Provides value/education
-3. Softly recommends a solution
+2. Provides value/education (2-3 sentences)
+3. Softly recommends a solution (1 sentence)
 4. Ends with a question to continue conversation
 
-Keep it natural and conversational (150-200 words).
+⚠️ DO NOT include any links in the reply. The link will be added separately.
+Keep it natural and conversational (100-150 words).
 `;
 
     const response = await groq.chat.completions.create({
