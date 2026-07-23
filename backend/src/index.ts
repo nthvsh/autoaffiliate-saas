@@ -50,7 +50,7 @@ app.get('/api/test-db', async (req, res) => {
   res.json({ success: true, data });
 });
 
-// ✅ Campaign Route - With Auto Discovery + Intent/Pain Filtering
+// ✅ Campaign Route - With Auto Discovery + Lowered Threshold for Testing
 app.post('/api/campaign/run', async (req, res) => {
   console.log('✅ Campaign route HIT!');
   console.log('Body:', req.body);
@@ -79,7 +79,7 @@ app.post('/api/campaign/run', async (req, res) => {
     const campaignId = data[0].id;
     console.log(`✅ Campaign saved: ${campaignId}`);
 
-    // 2. 🔥 START DISCOVERY WITH INTENT + PAIN FILTERING
+    // 2. 🔥 START DISCOVERY WITH LOWERED THRESHOLD
     console.log(`🔍 Starting discovery for campaign: ${campaignId}`);
     
     (async () => {
@@ -88,59 +88,54 @@ app.post('/api/campaign/run', async (req, res) => {
         const videos = await searchYouTube(niche, 5);
         
         let totalComments = 0;
-        let highIntentCount = 0;
+        let qualifiedComments = 0;
         
         for (const video of videos) {
           console.log(`💬 Fetching comments for video: ${video.id}`);
           const comments = await getVideoComments(video.id, 20);
           
           for (const comment of comments) {
-            // ✅ Step 1: Detect Pain
-            const pain = detectPainPoints(comment.text);
+            totalComments++;
             
-            // ✅ Step 2: Score Intent
+            const pain = detectPainPoints(comment.text);
             const intent = scoreIntent(comment.text);
             
-            // ✅ Step 3: Filter — ONLY high pain + high intent
-            if (pain.pain_level === 'high' || pain.pain_level === 'medium') {
-              if (intent.score > 50) {
-                highIntentCount++;
-                
-                // Save to audience with pain + intent data
-                await supabase.from('audience').insert([{
-                  campaign_id: campaignId,
-                  username: comment.author,
-                  platform: 'youtube',
-                  country: country,
-                  post_content: comment.text,
-                  pain_score: pain.overall_pain,
-                  pain_category: pain.primary_pain,
-                  intent_score: intent.score,
-                  intent_level: intent.level,
-                  found_at: new Date().toISOString()
-                }]);
-                
-                // ✅ Step 4: Generate AI reply with pain + intent context
-                const aiReply = await generateReply(pain, intent, niche);
-                
-                // ✅ Step 5: Add landing page link to reply
-                const replyWithLink = `${aiReply}\n\n👉 Check this out: ${landingPage}?campaign=${campaignId}&country=${country}`;
-                
-                // ✅ Step 6: Add to queue with priority
-                addToQueue({
-                  content: replyWithLink,
-                  platform: 'youtube',
-                  scheduledTime: new Date(),
-                  priority: intent.score > 75 ? 'high' : 'medium'
-                });
-                
-                totalComments++;
-              }
+            // ✅ Log every comment's score for debugging
+            console.log(`📊 Comment ${totalComments}: Intent=${intent.score}, Pain=${pain.pain_level}, Text: ${comment.text.substring(0, 40)}...`);
+            
+            // ✅ TEMPORARY: Lowered threshold for testing (intent > 0 means ALL comments)
+            // ✅ Accept all comments regardless of pain/intent to test publishing
+            if (intent.score > 0) {
+              qualifiedComments++;
+              console.log(`🎯 Qualified comment found! Intent=${intent.score}, Pain=${pain.pain_level}`);
+              
+              await supabase.from('audience').insert([{
+                campaign_id: campaignId,
+                username: comment.author,
+                platform: 'youtube',
+                country: country,
+                post_content: comment.text,
+                pain_score: pain.overall_pain,
+                pain_category: pain.primary_pain,
+                intent_score: intent.score,
+                intent_level: intent.level,
+                found_at: new Date().toISOString()
+              }]);
+              
+              const aiReply = await generateReply(pain, intent, niche);
+              const replyWithLink = `${aiReply}\n\n👉 Check this out: ${landingPage}?campaign=${campaignId}&country=${country}`;
+              
+              addToQueue({
+                content: replyWithLink,
+                platform: 'youtube',
+                scheduledTime: new Date(),
+                priority: intent.score > 75 ? 'high' : 'medium'
+              });
             }
           }
         }
         
-        console.log(`✅ Discovery complete! Found ${totalComments} high-intent comments out of ${highIntentCount} total`);
+        console.log(`✅ Discovery complete! Found ${qualifiedComments} qualified comments out of ${totalComments} total`);
       } catch (err) {
         console.error('❌ Background discovery error:', err);
       }
