@@ -14,7 +14,7 @@ import funnelRoutes from './modules/funnel/routes/funnel.routes';
 import analyticsRoutes from './modules/analytics/routes/analytics.routes';
 import observabilityRoutes from './modules/observability/routes/observability.routes';
 import { startScheduler } from './modules/publishing/services/scheduler.service';
-import { searchYouTube, getVideoComments } from './modules/discovery/services/youtube.service';
+import { searchYouTube, scrapeYouTubeComments } from './modules/discovery/services/youtube.service'; // ✅ Changed
 import { addToQueue } from './modules/publishing/services/queue.service';
 import { detectPainPoints } from './modules/intelligence/services/pain.service';
 import { scoreIntent } from './modules/intelligence/services/intent.service';
@@ -50,7 +50,7 @@ app.get('/api/test-db', async (req, res) => {
   res.json({ success: true, data });
 });
 
-// ✅ Campaign Route - With Auto Discovery + Lowered Threshold for Testing
+// ✅ Campaign Route - With Web Scraping (No API Limit!)
 app.post('/api/campaign/run', async (req, res) => {
   console.log('✅ Campaign route HIT!');
   console.log('Body:', req.body);
@@ -79,7 +79,7 @@ app.post('/api/campaign/run', async (req, res) => {
     const campaignId = data[0].id;
     console.log(`✅ Campaign saved: ${campaignId}`);
 
-    // 2. 🔥 START DISCOVERY WITH LOWERED THRESHOLD
+    // 2. 🔥 START DISCOVERY WITH WEB SCRAPING (NO API LIMIT!)
     console.log(`🔍 Starting discovery for campaign: ${campaignId}`);
     
     (async () => {
@@ -91,8 +91,9 @@ app.post('/api/campaign/run', async (req, res) => {
         let qualifiedComments = 0;
         
         for (const video of videos) {
-          console.log(`💬 Fetching comments for video: ${video.id}`);
-          const comments = await getVideoComments(video.id, 20);
+          console.log(`💬 Scraping comments for video: ${video.id}`);
+          // ✅ Using web scraping — no API key, no rate limit!
+          const comments = await scrapeYouTubeComments(video.id, 20);
           
           for (const comment of comments) {
             totalComments++;
@@ -104,7 +105,6 @@ app.post('/api/campaign/run', async (req, res) => {
             console.log(`📊 Comment ${totalComments}: Intent=${intent.score}, Pain=${pain.pain_level}, Text: ${comment.text.substring(0, 40)}...`);
             
             // ✅ TEMPORARY: Lowered threshold for testing (intent > 0 means ALL comments)
-            // ✅ Accept all comments regardless of pain/intent to test publishing
             if (intent.score > 0) {
               qualifiedComments++;
               console.log(`🎯 Qualified comment found! Intent=${intent.score}, Pain=${pain.pain_level}`);
