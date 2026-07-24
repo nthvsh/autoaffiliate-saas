@@ -93,7 +93,7 @@ app.post('/api/campaign/run', async (req, res) => {
         for (const video of videos) {
           console.log(`💬 Scraping comments for video: ${video.id}`);
           // ✅ Using web scraping — no API key, no rate limit!
-          const comments = await scrapeYouTubeComments(video.id, 20);
+          const comments = await getVideoComments(video.id, 20);
           
           for (const comment of comments) {
             totalComments++;
