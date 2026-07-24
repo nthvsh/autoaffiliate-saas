@@ -56,7 +56,7 @@ export const getVideoComments = async (videoId: string, maxResults: number = 20,
         console.log(`⏳ Rate limit hit. Waiting ${Math.pow(2, i) * 5000}ms before retry...`);
       }
       if (i < retries - 1) {
-        const waitTime = Math.pow(2, i) * 5000; // 5s, 10s, 20s
+        const waitTime = Math.pow(2, i) * 5000;
         await new Promise(resolve => setTimeout(resolve, waitTime));
       } else {
         console.error(`❌ Failed after ${retries} attempts for video ${videoId}`);
@@ -70,9 +70,15 @@ export const getVideoComments = async (videoId: string, maxResults: number = 20,
 // ==================== YOUTUBE COMMENTS (WEB SCRAPING - NO API KEY) ====================
 
 export const scrapeYouTubeComments = async (videoId: string, limit: number = 20) => {
+  // ✅ Use Chrome path from environment variable or fallback to Render's cache path
+  const chromePath = process.env.PUPPETEER_EXECUTABLE_PATH || '/opt/render/.cache/puppeteer/chrome/linux-150.0.7871.24/chrome-linux64/chrome';
+  
+  console.log(`🔧 Using Chrome path: ${chromePath}`);
+
   const browser = await puppeteer.launch({
     headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    executablePath: chromePath
   });
 
   try {
