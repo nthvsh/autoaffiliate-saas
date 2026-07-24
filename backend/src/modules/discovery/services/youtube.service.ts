@@ -1,6 +1,6 @@
 import axios from 'axios';
 import dotenv from 'dotenv';
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
 
 dotenv.config();
 
@@ -31,53 +31,17 @@ export const searchYouTube = async (query: string, maxResults: number = 10) => {
   }
 };
 
-// ==================== YOUTUBE COMMENTS (API with Retry) ====================
-
-export const getVideoComments = async (videoId: string, maxResults: number = 20, retries: number = 3) => {
-  for (let i = 0; i < retries; i++) {
-    try {
-      console.log(`💬 Fetching comments for video: ${videoId} (attempt ${i+1}/${retries})`);
-      const url = `https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&videoId=${videoId}&maxResults=${maxResults}&key=${YOUTUBE_API_KEY}`;
-      const response = await axios.get(url);
-      
-      const comments = response.data.items.map((item: any) => ({
-        id: item.id,
-        author: item.snippet.topLevelComment.snippet.authorDisplayName,
-        text: item.snippet.topLevelComment.snippet.textDisplay,
-        publishedAt: item.snippet.topLevelComment.snippet.publishedAt,
-        likeCount: item.snippet.topLevelComment.snippet.likeCount,
-      }));
-      
-      console.log(`✅ Found ${comments.length} comments`);
-      return comments;
-    } catch (error: any) {
-      console.error(`❌ Comments error (attempt ${i+1}/${retries}):`, error.message);
-      if (error.response?.status === 403) {
-        console.log(`⏳ Rate limit hit. Waiting ${Math.pow(2, i) * 5000}ms before retry...`);
-      }
-      if (i < retries - 1) {
-        const waitTime = Math.pow(2, i) * 5000;
-        await new Promise(resolve => setTimeout(resolve, waitTime));
-      } else {
-        console.error(`❌ Failed after ${retries} attempts for video ${videoId}`);
-        return [];
-      }
-    }
-  }
-  return [];
-};
-
 // ==================== YOUTUBE COMMENTS (WEB SCRAPING - NO API KEY) ====================
 
 export const scrapeYouTubeComments = async (videoId: string, limit: number = 20) => {
-  // ✅ Use Chrome path from environment variable or fallback to Render's cache path
-  const chromePath = process.env.PUPPETEER_EXECUTABLE_PATH || '/opt/render/.cache/puppeteer/chrome/linux-150.0.7871.24/chrome-linux64/chrome';
+  // ✅ Use Render's pre-installed Chrome
+  const chromePath = '/usr/bin/google-chrome';
   
   console.log(`🔧 Using Chrome path: ${chromePath}`);
 
   const browser = await puppeteer.launch({
     headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
     executablePath: chromePath
   });
 
@@ -136,4 +100,40 @@ export const scrapeYouTubeComments = async (videoId: string, limit: number = 20)
   } finally {
     await browser.close();
   }
+};
+
+// ==================== YOUTUBE COMMENTS (API with Retry) - FALLBACK ====================
+
+export const getVideoComments = async (videoId: string, maxResults: number = 20, retries: number = 3) => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      console.log(`💬 Fetching comments for video: ${videoId} (attempt ${i+1}/${retries})`);
+      const url = `https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&videoId=${videoId}&maxResults=${maxResults}&key=${YOUTUBE_API_KEY}`;
+      const response = await axios.get(url);
+      
+      const comments = response.data.items.map((item: any) => ({
+        id: item.id,
+        author: item.snippet.topLevelComment.snippet.authorDisplayName,
+        text: item.snippet.topLevelComment.snippet.textDisplay,
+        publishedAt: item.snippet.topLevelComment.snippet.publishedAt,
+        likeCount: item.snippet.topLevelComment.snippet.likeCount,
+      }));
+      
+      console.log(`✅ Found ${comments.length} comments`);
+      return comments;
+    } catch (error: any) {
+      console.error(`❌ Comments error (attempt ${i+1}/${retries}):`, error.message);
+      if (error.response?.status === 403) {
+        console.log(`⏳ Rate limit hit. Waiting ${Math.pow(2, i) * 5000}ms before retry...`);
+      }
+      if (i < retries - 1) {
+        const waitTime = Math.pow(2, i) * 5000;
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      } else {
+        console.error(`❌ Failed after ${retries} attempts for video ${videoId}`);
+        return [];
+      }
+    }
+  }
+  return [];
 };
