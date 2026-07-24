@@ -14,7 +14,7 @@ import funnelRoutes from './modules/funnel/routes/funnel.routes';
 import analyticsRoutes from './modules/analytics/routes/analytics.routes';
 import observabilityRoutes from './modules/observability/routes/observability.routes';
 import { startScheduler } from './modules/publishing/services/scheduler.service';
-import { searchYouTube, scrapeYouTubeComments } from './modules/discovery/services/youtube.service'; // ✅ Changed
+import { searchYouTube, getVideoComments } from './modules/discovery/services/youtube.service';
 import { addToQueue } from './modules/publishing/services/queue.service';
 import { detectPainPoints } from './modules/intelligence/services/pain.service';
 import { scoreIntent } from './modules/intelligence/services/intent.service';
