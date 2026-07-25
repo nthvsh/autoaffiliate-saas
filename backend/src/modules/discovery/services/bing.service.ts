@@ -4,39 +4,39 @@ const BING_API_KEY = process.env.BING_API_KEY!;
 
 export const searchBing = async (query: string, country: string, limit: number = 10) => {
   try {
-    console.log(`🔍 Searching Bing for: ${query} (${country})`);
-    const market = country === 'US' ? 'en-US' : country === 'UK' ? 'en-GB' : 'en-IN';
-    const url = `https://bing-web-search4.p.rapidapi.com/search?q=${encodeURIComponent(query)}&count=${limit}&mkt=${market}`;
-    
+    console.log(`🔍 Bing: "${query}" (${country})`);
+
+    // RapidAPI Bing Web Search endpoint (verified working)
+    const url = `https://bing-web-search1.p.rapidapi.com/search?q=${encodeURIComponent(query)}&page=1&page_size=${limit}`;
+
     const response = await axios.get(url, {
       headers: {
         'x-rapidapi-key': BING_API_KEY,
-        'x-rapidapi-host': 'bing-web-search4.p.rapidapi.com'
-      }
+        'x-rapidapi-host': 'bing-web-search1.p.rapidapi.com'
+      },
+      timeout: 10000
     });
-    
-    // Debug: Log full response structure
-    console.log('📥 Response Status:', response.status);
-    console.log('📊 Full Response:', JSON.stringify(response.data, null, 2).slice(0, 500));
-    
-    // Try different data paths
-    const webPages = response.data?.webPages?.value || [];
-    const results = webPages.map((item: any) => ({
-      title: item.name || item.title || 'No title',
-      snippet: item.snippet || item.description || '',
+
+    // RapidAPI Bing response structure
+    const items = response.data?.results || response.data?.webPages?.value || response.data?.value || [];
+
+    const results = items.map((item: any) => ({
+      title: item.title || item.name || 'No title',
+      snippet: item.description || item.snippet || '',
       url: item.url || item.link || '',
       source: 'bing',
-      country: country,
+      country,
       found_at: new Date().toISOString()
     }));
-    
-    console.log(`✅ Bing found ${results.length} results`);
+
+    console.log(`✅ Bing: ${results.length} results`);
     return results;
+
   } catch (error: any) {
-    console.error('❌ Bing search error:', error.message);
+    console.error('❌ Bing error:', error.message);
     if (error.response) {
       console.error('Status:', error.response.status);
-      console.error('Data:', error.response.data);
+      console.error('Data:', JSON.stringify(error.response.data).slice(0, 300));
     }
     return [];
   }
