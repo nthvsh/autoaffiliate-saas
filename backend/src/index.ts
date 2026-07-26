@@ -13,13 +13,14 @@ import promptRoutes from './modules/prompts/routes/prompt.routes';
 import funnelRoutes from './modules/funnel/routes/funnel.routes';
 import analyticsRoutes from './modules/analytics/routes/analytics.routes';
 import observabilityRoutes from './modules/observability/routes/observability.routes';
-import blogRoutes from './modules/content/routes/blog.routes';  // ✅ Add this import
+import blogRoutes from './modules/content/routes/blog.routes';
 import { startScheduler } from './modules/publishing/services/scheduler.service';
 import { searchYouTube, getVideoComments } from './modules/discovery/services/youtube.service';
 import { addToQueue } from './modules/publishing/services/queue.service';
 import { detectPainPoints } from './modules/intelligence/services/pain.service';
 import { scoreIntent } from './modules/intelligence/services/intent.service';
 import { generateReply } from './modules/content/services/gemini.service';
+import { generateAndSaveBlogPost } from './modules/content/services/blog.service';  // ✅ Add this
 
 dotenv.config();
 
@@ -51,7 +52,7 @@ app.get('/api/test-db', async (req, res) => {
   res.json({ success: true, data });
 });
 
-// ✅ Campaign Route - With Web Scraping (No API Limit!)
+// ✅ Campaign Route - With Auto Blog Generation
 app.post('/api/campaign/run', async (req, res) => {
   console.log('✅ Campaign route HIT!');
   console.log('Body:', req.body);
@@ -80,7 +81,20 @@ app.post('/api/campaign/run', async (req, res) => {
     const campaignId = data[0].id;
     console.log(`✅ Campaign saved: ${campaignId}`);
 
-    // 2. 🔥 START DISCOVERY WITH WEB SCRAPING (NO API LIMIT!)
+    // 🔥 2. GENERATE BLOG POST
+    try {
+      console.log(`📝 Generating blog post for campaign: ${campaignId}`);
+      const blogResult = await generateAndSaveBlogPost(campaignId, niche, affiliateLink);
+      if (blogResult.success) {
+        console.log(`✅ Blog post generated: ${blogResult.data.title}`);
+      } else {
+        console.error(`❌ Blog generation failed: ${blogResult.error}`);
+      }
+    } catch (blogError) {
+      console.error('❌ Blog generation error:', blogError);
+    }
+
+    // 3. START DISCOVERY (Background)
     console.log(`🔍 Starting discovery for campaign: ${campaignId}`);
     
     (async () => {
@@ -93,7 +107,6 @@ app.post('/api/campaign/run', async (req, res) => {
         
         for (const video of videos) {
           console.log(`💬 Scraping comments for video: ${video.id}`);
-          // ✅ Using web scraping — no API key, no rate limit!
           const comments = await getVideoComments(video.id, 20);
           
           for (const comment of comments) {
@@ -102,10 +115,8 @@ app.post('/api/campaign/run', async (req, res) => {
             const pain = detectPainPoints(comment.text);
             const intent = scoreIntent(comment.text);
             
-            // ✅ Log every comment's score for debugging
             console.log(`📊 Comment ${totalComments}: Intent=${intent.score}, Pain=${pain.pain_level}, Text: ${comment.text.substring(0, 40)}...`);
             
-            // ✅ TEMPORARY: Lowered threshold for testing (intent > 0 means ALL comments)
             if (intent.score > 0) {
               qualifiedComments++;
               console.log(`🎯 Qualified comment found! Intent=${intent.score}, Pain=${pain.pain_level}`);
@@ -142,11 +153,11 @@ app.post('/api/campaign/run', async (req, res) => {
       }
     })();
 
-    // 3. Return response immediately
+    // 4. Return response immediately
     res.json({ 
       success: true, 
       campaignId: campaignId, 
-      message: 'Campaign started! Discovery running in background.' 
+      message: 'Campaign started! Blog + Discovery running in background.' 
     });
     
   } catch (error: any) {
@@ -166,12 +177,11 @@ app.use('/api/prompts', promptRoutes);
 app.use('/api/funnel', funnelRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/observability', observabilityRoutes);
-app.use('/api/blog', blogRoutes);  // ✅ Add this line
+app.use('/api/blog', blogRoutes);
 
 // ✅ Error handling in listen
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  // Start scheduler after server starts
   startScheduler();
 }).on('error', (err) => {
   console.error('❌ Server error:', err);
