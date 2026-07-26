@@ -113,3 +113,6 @@ Return as JSON with fields: title, content, excerpt, category, tags.
     throw error;
   }
 };
+
+// ✅ Export genAI for use in other files
+export { genAI };
