@@ -1,43 +1,48 @@
 import axios from 'axios';
 
-const BING_API_KEY = process.env.BING_API_KEY!;
-
 export const searchBing = async (query: string, country: string, limit: number = 10) => {
   try {
-    console.log(`🔍 Bing: "${query}" | Key exists: ${!!BING_API_KEY}`);
+    console.log(`🔍 DuckDuckGo: "${query}"`);
 
-    // Try RapidAPI Bing endpoint
-    const url = `https://bing-web-search1.p.rapidapi.com/search?q=${encodeURIComponent(query)}&page=1&page_size=${limit}`;
+    const url = `https://lite.duckduckgo.com/lite/?q=${encodeURIComponent(query)}`;
 
     const response = await axios.get(url, {
       headers: {
-        'x-rapidapi-key': BING_API_KEY,
-        'x-rapidapi-host': 'bing-web-search1.p.rapidapi.com'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'text/html',
+        'Accept-Language': 'en-US,en;q=0.9',
       },
-      timeout: 15000
+      timeout: 15000,
     });
 
-    console.log('📊 Bing Status:', response.status);
-    console.log('📊 Bing Keys:', Object.keys(response.data || {}));
+    const html = response.data;
 
-    const items = response.data?.results || [];
-    
-    const results = items.map((item: any) => ({
-      title: item.title || 'No title',
-      snippet: item.description || item.snippet || '',
-      url: item.url || item.link || '',
-      source: 'bing',
-      country,
-      found_at: new Date().toISOString()
-    }));
+    // Parse results from HTML using regex
+    const results: any[] = [];
+    const resultBlocks = html.match(/<tr>[\s\S]*?<\/tr>/g) || [];
 
-    console.log(`✅ Bing: ${results.length} results`);
+    for (const block of resultBlocks.slice(0, limit)) {
+      const titleMatch = block.match(/<a[^>]*class="[^"]*result-link[^"]*"[^>]*>([^<]*)<\/a>/);
+      const urlMatch = block.match(/<a[^>]*class="[^"]*result-link[^"]*"[^>]*href="([^"]*)"/);
+      const snippetMatch = block.match(/<td[^>]*class="[^"]*result-snippet[^"]*"[^>]*>([\s\S]*?)<\/td>/);
+
+      if (titleMatch && urlMatch) {
+        results.push({
+          title: titleMatch[1].replace(/&amp;/g, '&').replace(/&quot;/g, '"').trim(),
+          snippet: snippetMatch ? snippetMatch[1].replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').trim() : '',
+          url: urlMatch[1].startsWith('http') ? urlMatch[1] : `https:${urlMatch[1]}`,
+          source: 'duckduckgo',
+          country,
+          found_at: new Date().toISOString(),
+        });
+      }
+    }
+
+    console.log(`✅ DuckDuckGo: ${results.length} results`);
     return results;
 
   } catch (error: any) {
-    console.error('❌ Bing ERROR:', error.message);
-    console.error('❌ Status:', error.response?.status);
-    console.error('❌ Response:', JSON.stringify(error.response?.data || {}).slice(0, 500));
+    console.error('❌ DuckDuckGo error:', error.message);
     return [];
   }
 };
