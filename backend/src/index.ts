@@ -13,6 +13,7 @@ import promptRoutes from './modules/prompts/routes/prompt.routes';
 import funnelRoutes from './modules/funnel/routes/funnel.routes';
 import analyticsRoutes from './modules/analytics/routes/analytics.routes';
 import observabilityRoutes from './modules/observability/routes/observability.routes';
+import blogRoutes from './modules/content/routes/blog.routes';  // ✅ Add this import
 import { startScheduler } from './modules/publishing/services/scheduler.service';
 import { searchYouTube, getVideoComments } from './modules/discovery/services/youtube.service';
 import { addToQueue } from './modules/publishing/services/queue.service';
@@ -165,6 +166,7 @@ app.use('/api/prompts', promptRoutes);
 app.use('/api/funnel', funnelRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/observability', observabilityRoutes);
+app.use('/api/blog', blogRoutes);  // ✅ Add this line
 
 // ✅ Error handling in listen
 app.listen(PORT, () => {
