@@ -1,118 +1,58 @@
-import Groq from 'groq-sdk';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import dotenv from 'dotenv';
+import { supabase } from '../../../config/database';
+import { generateBlogPost } from './gemini.service';
 
-dotenv.config();
-
-// ✅ Initialize Groq
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-
-// ✅ Initialize Gemini
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-
-export const generateReply = async (pain: any, intent: any, niche: string) => {
+export const generateAndSaveBlogPost = async (campaignId: string, niche: string, affiliateLink: string) => {
   try {
-    const prompt = `
-You are an expert affiliate marketer in the ${niche} niche.
-User pain: ${pain.primary_pain} (level: ${pain.pain_level})
-User intent: ${intent.level} (score: ${intent.score})
+    // Generate blog post using Groq AI
+    const blogData = await generateBlogPost(niche, affiliateLink);
+    
+    // Create slug
+    const slug = blogData.title
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, '')
+      .replace(/\s+/g, '-');
 
-Generate a personalized, helpful reply that:
-1. Shows empathy for their pain
-2. Provides value/education
-3. Softly recommends a solution
-4. Ends with a question to continue conversation
+    // Save to database
+    const { data, error } = await supabase
+      .from('blog_posts')
+      .insert([{
+        campaign_id: campaignId,
+        title: blogData.title,
+        slug: slug,
+        content: blogData.content,
+        excerpt: blogData.excerpt || blogData.content.substring(0, 200),
+        niche: niche,
+        affiliate_link: affiliateLink || '',
+        category: blogData.category || 'General',
+        tags: blogData.tags || [],
+        published_at: new Date().toISOString(),
+      }])
+      .select();
 
-Keep it natural and conversational (150-200 words).
-`;
-
-    const response = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.8,
-      max_tokens: 500,
-    });
-
-    return response.choices[0]?.message?.content || null;
+    if (error) throw error;
+    return { success: true, data: data[0] };
   } catch (error: any) {
-    console.error('❌ Groq error:', error.message);
-    return null;
+    console.error('❌ Blog post error:', error.message);
+    return { success: false, error: error.message };
   }
 };
 
-export const generateHook = async (niche: string, topic: string) => {
-  try {
-    const prompt = `
-Generate 5 viral hooks for a ${niche} post about "${topic}".
-Each hook should be:
-- Attention-grabbing
-- Curious/emotional
-- Under 10 words
-
-Format: Just list hooks with numbers.
-`;
-
-    const response = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.9,
-      max_tokens: 150,
-    });
-
-    return response.choices[0]?.message?.content || null;
-  } catch (error: any) {
-    console.error('❌ Hook error:', error.message);
-    return null;
-  }
+export const getBlogPosts = async (limit: number = 10, offset: number = 0) => {
+  const { data, error } = await supabase
+    .from('blog_posts')
+    .select('*')
+    .order('published_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+  
+  return { data, error };
 };
 
-// ==================== BLOG GENERATION ====================
-
-export const generateBlogPost = async (niche: string, affiliateLink: string) => {
-  try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-    
-    const prompt = `
-Write a detailed, SEO-optimized blog post about ${niche}.
-Target audience: People interested in ${niche} solutions.
-Include: Introduction, 3-4 main points, conclusion.
-Add a natural call-to-action with this affiliate link: ${affiliateLink || '#'}
-Length: 600-800 words.
-Return as JSON with fields: title, content, excerpt, category, tags.
-`;
-
-    const result = await model.generateContent(prompt);
-    const response = result.response.text();
-    
-    try {
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        return {
-          title: parsed.title || `${niche} - Complete Guide`,
-          content: parsed.content || response,
-          excerpt: parsed.excerpt || response.substring(0, 200),
-          category: parsed.category || 'General',
-          tags: parsed.tags || [niche],
-        };
-      }
-    } catch (e) {
-      console.log('JSON parse failed, using fallback');
-    }
-    
-    // Fallback
-    return {
-      title: `${niche} - Complete Guide`,
-      content: response,
-      excerpt: response.substring(0, 200),
-      category: 'General',
-      tags: [niche],
-    };
-  } catch (error: any) {
-    console.error('❌ Blog generation error:', error.message);
-    throw error;
-  }
+export const getBlogPostBySlug = async (slug: string) => {
+  const { data, error } = await supabase
+    .from('blog_posts')
+    .select('*')
+    .eq('slug', slug)
+    .single();
+  
+  return { data, error };
 };
-
-// ✅ Export genAI for use in other files
-export { genAI };
