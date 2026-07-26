@@ -1,66 +1,34 @@
 import axios from 'axios';
 
+const BING_API_KEY = process.env.BING_API_KEY!;
+
 export const searchBing = async (query: string, country: string, limit: number = 10) => {
   try {
-    console.log(`🔍 DuckDuckGo: "${query}"`);
-
-    const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
-
+    console.log(`🔍 Searching Bing for: ${query} (${country})`);
+    const market = country === 'US' ? 'en-US' : country === 'UK' ? 'en-GB' : 'en-IN';
+    const url = `https://bing-web-search4.p.rapidapi.com/search?q=${encodeURIComponent(query)}&count=${limit}&mkt=${market}`;
+    
     const response = await axios.get(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml',
-        'Accept-Language': 'en-US,en;q=0.9',
-      },
-      timeout: 15000,
-    });
-
-    const html = response.data;
-
-    // Simple regex to extract results
-    const results: any[] = [];
-    
-    // DuckDuckGo HTML result pattern
-    const linkRegex = /<a[^>]*class="result__a"[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/g;
-    const snippetRegex = /<a[^>]*class="result__snippet"[^>]*>([\s\S]*?)<\/a>/g;
-    
-    const links: Array<{url: string, title: string}> = [];
-    let match;
-    
-    while ((match = linkRegex.exec(html)) !== null && links.length < limit) {
-      let url = match[1];
-      // DuckDuckGo redirects through their domain
-      if (url.startsWith('//duckduckgo.com/l/?')) {
-        const uddg = url.match(/uddg=([^&]*)/);
-        if (uddg) {
-          url = decodeURIComponent(uddg[1]);
-        }
+        'x-rapidapi-key': BING_API_KEY,
+        'x-rapidapi-host': 'bing-web-search4.p.rapidapi.com'
       }
-      const title = match[2].replace(/<[^>]*>/g, '').trim();
-      links.push({ url, title });
-    }
-
-    const snippets: string[] = [];
-    while ((match = snippetRegex.exec(html)) !== null && snippets.length < limit) {
-      snippets.push(match[1].replace(/<[^>]*>/g, '').trim());
-    }
-
-    for (let i = 0; i < links.length; i++) {
-      results.push({
-        title: links[i].title,
-        snippet: snippets[i] || '',
-        url: links[i].url,
-        source: 'duckduckgo',
-        country,
-        found_at: new Date().toISOString(),
-      });
-    }
-
-    console.log(`✅ DuckDuckGo: ${results.length} results`);
+    });
+    
+    const webPages = response.data?.webPages?.value || [];
+    const results = webPages.map((item: any) => ({
+      title: item.name || item.title || 'No title',
+      snippet: item.snippet || item.description || '',
+      url: item.url || item.link || '',
+      source: 'bing',
+      country: country,
+      found_at: new Date().toISOString()
+    }));
+    
+    console.log(`✅ Bing found ${results.length} results`);
     return results;
-
   } catch (error: any) {
-    console.error('❌ DuckDuckGo error:', error.message);
+    console.error('❌ Bing search error:', error.message);
     return [];
   }
 };
