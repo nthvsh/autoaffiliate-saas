@@ -2,21 +2,13 @@ import axios from 'axios';
 import { googleKeyManager } from '../../../config/google-keys';
 import { supabase } from '../../../config/database';
 
-const GOOGLE_CX = process.env.GOOGLE_CX!;
+const GOOGLE_CX = process.env.GOOGLE_CX;
 
 export const searchGoogle = async (query: string, country: string, limit: number = 10) => {
-  // Cache check
-  const { data: cached } = await supabase
-    .from('youtube_cache')
-    .select('*')
-    .eq('cache_type', 'google_search')
-    .eq('query', query)
-    .gt('expires_at', new Date().toISOString())
-    .maybeSingle();
-
-  if (cached) {
-    console.log('💾 Google cache hit:', query);
-    return cached.data;
+  // DEBUG: Check if GOOGLE_CX exists
+  if (!GOOGLE_CX) {
+    console.error('🚨 GOOGLE_CX is MISSING from environment variables!');
+    return [];
   }
 
   const key = googleKeyManager.getNextKey();
@@ -26,7 +18,9 @@ export const searchGoogle = async (query: string, country: string, limit: number
   }
 
   try {
-    console.log(`🔍 Google: "${query}" | Key: ****${key.slice(-8)}`);
+    console.log(`🔍 Google: "${query}"`);
+    console.log(`🔍 Using CX: ${GOOGLE_CX.slice(0, 8)}... | Key: ****${key.slice(-8)}`);
+    
     const gl = country === 'US' ? 'us' : country === 'UK' ? 'uk' : 'in';
     const url = `https://www.googleapis.com/customsearch/v1?key=${key}&cx=${GOOGLE_CX}&q=${encodeURIComponent(query)}&gl=${gl}&num=${limit}`;
     
@@ -42,18 +36,12 @@ export const searchGoogle = async (query: string, country: string, limit: number
     })) || [];
     
     console.log(`✅ Google: ${results.length} results`);
-
-    // Save cache (24 hours)
-    await supabase.from('youtube_cache').upsert({
-      cache_type: 'google_search',
-      query,
-      data: results,
-      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-    }, { onConflict: 'cache_type,query' });
-
     return results;
   } catch (error: any) {
     console.error('❌ Google error:', error.response?.status, error.message);
+    // Log the actual URL that failed (mask the key)
+    const failedUrl = error.config?.url?.replace(/key=[^&]+/, 'key=****');
+    console.error('❌ Failed URL:', failedUrl);
     return [];
   }
 };
