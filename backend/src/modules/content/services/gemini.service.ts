@@ -74,8 +74,8 @@ Format: Just list hooks with numbers.
 
 export const generateBlogPost = async (niche: string, affiliateLink: string) => {
   try {
-    // ✅ Use gemini-2.0-flash-exp (newer model)
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+    // ✅ Use 'gemini-pro' (most stable model)
+    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
     
     const prompt = `
 Write a detailed, SEO-optimized blog post about ${niche}.
