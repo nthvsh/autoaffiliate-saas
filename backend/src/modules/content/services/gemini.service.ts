@@ -1,5 +1,5 @@
 import Groq from 'groq-sdk';
-import { getGeminiModel } from '../config/gemini';
+import { getGeminiModel } from '../../config/gemini';
 import dotenv from 'dotenv';
 
 dotenv.config();
