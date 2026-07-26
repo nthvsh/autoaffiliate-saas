@@ -4,9 +4,9 @@ const BING_API_KEY = process.env.BING_API_KEY!;
 
 export const searchBing = async (query: string, country: string, limit: number = 10) => {
   try {
-    console.log(`🔍 Bing: "${query}" (${country})`);
+    console.log(`🔍 Bing: "${query}" | Key exists: ${!!BING_API_KEY}`);
 
-    // RapidAPI Bing Web Search endpoint (verified working)
+    // Try RapidAPI Bing endpoint
     const url = `https://bing-web-search1.p.rapidapi.com/search?q=${encodeURIComponent(query)}&page=1&page_size=${limit}`;
 
     const response = await axios.get(url, {
@@ -14,14 +14,16 @@ export const searchBing = async (query: string, country: string, limit: number =
         'x-rapidapi-key': BING_API_KEY,
         'x-rapidapi-host': 'bing-web-search1.p.rapidapi.com'
       },
-      timeout: 10000
+      timeout: 15000
     });
 
-    // RapidAPI Bing response structure
-    const items = response.data?.results || response.data?.webPages?.value || response.data?.value || [];
+    console.log('📊 Bing Status:', response.status);
+    console.log('📊 Bing Keys:', Object.keys(response.data || {}));
 
+    const items = response.data?.results || [];
+    
     const results = items.map((item: any) => ({
-      title: item.title || item.name || 'No title',
+      title: item.title || 'No title',
       snippet: item.description || item.snippet || '',
       url: item.url || item.link || '',
       source: 'bing',
@@ -33,11 +35,9 @@ export const searchBing = async (query: string, country: string, limit: number =
     return results;
 
   } catch (error: any) {
-    console.error('❌ Bing error:', error.message);
-    if (error.response) {
-      console.error('Status:', error.response.status);
-      console.error('Data:', JSON.stringify(error.response.data).slice(0, 300));
-    }
+    console.error('❌ Bing ERROR:', error.message);
+    console.error('❌ Status:', error.response?.status);
+    console.error('❌ Response:', JSON.stringify(error.response?.data || {}).slice(0, 500));
     return [];
   }
 };
