@@ -1,14 +1,11 @@
 import Groq from 'groq-sdk';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { getGeminiModel } from '../config/gemini';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
 // ✅ Initialize Groq
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-
-// ✅ Initialize Gemini
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 // ==================== REPLY GENERATION ====================
 
@@ -74,8 +71,8 @@ Format: Just list hooks with numbers.
 
 export const generateBlogPost = async (niche: string, affiliateLink: string) => {
   try {
-    // ✅ FIXED: Using gemini-1.5-pro (works with v1beta API)
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    // ✅ Using gemini-2.0-flash with round-robin key rotation
+    const model = getGeminiModel('gemini-2.0-flash');
     
     const prompt = `
 Write a detailed, SEO-optimized blog post about ${niche}.
