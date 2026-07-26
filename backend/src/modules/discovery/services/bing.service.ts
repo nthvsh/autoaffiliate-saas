@@ -4,12 +4,12 @@ export const searchBing = async (query: string, country: string, limit: number =
   try {
     console.log(`🔍 DuckDuckGo: "${query}"`);
 
-    const url = `https://lite.duckduckgo.com/lite/?q=${encodeURIComponent(query)}`;
+    const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
 
     const response = await axios.get(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Accept': 'text/html',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml',
         'Accept-Language': 'en-US,en;q=0.9',
       },
       timeout: 15000,
@@ -17,25 +17,43 @@ export const searchBing = async (query: string, country: string, limit: number =
 
     const html = response.data;
 
-    // Parse results from HTML using regex
+    // Simple regex to extract results
     const results: any[] = [];
-    const resultBlocks = html.match(/<tr>[\s\S]*?<\/tr>/g) || [];
-
-    for (const block of resultBlocks.slice(0, limit)) {
-      const titleMatch = block.match(/<a[^>]*class="[^"]*result-link[^"]*"[^>]*>([^<]*)<\/a>/);
-      const urlMatch = block.match(/<a[^>]*class="[^"]*result-link[^"]*"[^>]*href="([^"]*)"/);
-      const snippetMatch = block.match(/<td[^>]*class="[^"]*result-snippet[^"]*"[^>]*>([\s\S]*?)<\/td>/);
-
-      if (titleMatch && urlMatch) {
-        results.push({
-          title: titleMatch[1].replace(/&amp;/g, '&').replace(/&quot;/g, '"').trim(),
-          snippet: snippetMatch ? snippetMatch[1].replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').trim() : '',
-          url: urlMatch[1].startsWith('http') ? urlMatch[1] : `https:${urlMatch[1]}`,
-          source: 'duckduckgo',
-          country,
-          found_at: new Date().toISOString(),
-        });
+    
+    // DuckDuckGo HTML result pattern
+    const linkRegex = /<a[^>]*class="result__a"[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/g;
+    const snippetRegex = /<a[^>]*class="result__snippet"[^>]*>([\s\S]*?)<\/a>/g;
+    
+    const links: Array<{url: string, title: string}> = [];
+    let match;
+    
+    while ((match = linkRegex.exec(html)) !== null && links.length < limit) {
+      let url = match[1];
+      // DuckDuckGo redirects through their domain
+      if (url.startsWith('//duckduckgo.com/l/?')) {
+        const uddg = url.match(/uddg=([^&]*)/);
+        if (uddg) {
+          url = decodeURIComponent(uddg[1]);
+        }
       }
+      const title = match[2].replace(/<[^>]*>/g, '').trim();
+      links.push({ url, title });
+    }
+
+    const snippets: string[] = [];
+    while ((match = snippetRegex.exec(html)) !== null && snippets.length < limit) {
+      snippets.push(match[1].replace(/<[^>]*>/g, '').trim());
+    }
+
+    for (let i = 0; i < links.length; i++) {
+      results.push({
+        title: links[i].title,
+        snippet: snippets[i] || '',
+        url: links[i].url,
+        source: 'duckduckgo',
+        country,
+        found_at: new Date().toISOString(),
+      });
     }
 
     console.log(`✅ DuckDuckGo: ${results.length} results`);
