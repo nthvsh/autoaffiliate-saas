@@ -1,5 +1,6 @@
 import Groq from 'groq-sdk';
-import { getGeminiModel } from '../../config/gemini';
+// ✅ Fixed import path (3 levels up to src/config)
+import { getGeminiModel } from '../../../config/gemini';
 import dotenv from 'dotenv';
 
 dotenv.config();
