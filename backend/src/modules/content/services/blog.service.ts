@@ -1,8 +1,15 @@
-import { supabase } from '../../../config/database';
+import { createClient } from '@supabase/supabase-js';
 import { generateBlogPost } from './gemini.service';
+
+// ✅ Admin client with service role key (bypasses RLS)
+const supabaseAdmin = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export const generateAndSaveBlogPost = async (campaignId: string, niche: string, affiliateLink: string) => {
   try {
+    console.log(`📝 Generating blog post for campaign: ${campaignId}`);
     const blogData = await generateBlogPost(niche, affiliateLink);
     
     const slug = blogData.title
@@ -10,7 +17,8 @@ export const generateAndSaveBlogPost = async (campaignId: string, niche: string,
       .replace(/[^a-z0-9\s]/g, '')
       .replace(/\s+/g, '-');
 
-    const { data, error } = await supabase
+    // ✅ Using admin client to bypass RLS
+    const { data, error } = await supabaseAdmin
       .from('blog_posts')
       .insert([{
         campaign_id: campaignId,
@@ -27,6 +35,7 @@ export const generateAndSaveBlogPost = async (campaignId: string, niche: string,
       .select();
 
     if (error) throw error;
+    console.log(`✅ Blog post saved: ${blogData.title}`);
     return { success: true, data: data[0] };
   } catch (error: any) {
     console.error('❌ Blog post error:', error.message);
@@ -35,7 +44,7 @@ export const generateAndSaveBlogPost = async (campaignId: string, niche: string,
 };
 
 export const getBlogPosts = async (limit: number = 10, offset: number = 0) => {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('blog_posts')
     .select('*')
     .order('published_at', { ascending: false })
@@ -45,7 +54,7 @@ export const getBlogPosts = async (limit: number = 10, offset: number = 0) => {
 };
 
 export const getBlogPostBySlug = async (slug: string) => {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('blog_posts')
     .select('*')
     .eq('slug', slug)
