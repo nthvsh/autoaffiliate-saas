@@ -72,8 +72,8 @@ Format: Just list hooks with numbers.
 
 export const generateBlogPost = async (niche: string, affiliateLink: string) => {
   try {
-    // ✅ Using gemini-2.0-flash with round-robin key rotation
-    const model = getGeminiModel('gemini-2.0-flash');
+    // ✅ Using gemini-2.5-pro with round-robin key rotation
+    const model = getGeminiModel('gemini-2.5-pro');
     
     const prompt = `
 Write a detailed, SEO-optimized blog post about ${niche}.
