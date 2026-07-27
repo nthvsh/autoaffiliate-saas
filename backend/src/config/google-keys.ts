@@ -6,13 +6,14 @@ class GoogleKeyManager {
   private index = 0;
 
   constructor() {
-    for (let i = 1; i <= 10; i++) {
-      const key = process.env[`GOOGLE_API_KEY_${i}`];
-      if (key) this.keys.push(key);
-    }
-    if (process.env.GOOGLE_API_KEY && !this.keys.includes(process.env.GOOGLE_API_KEY)) {
-      this.keys.unshift(process.env.GOOGLE_API_KEY);
-    }
+    // ✅ GOOGLE_API_KEY, GOOGLE_API_KEY_1, GOOGLE_API_KEY_2 dhoondega
+    const keys = [
+      process.env.GOOGLE_API_KEY,
+      process.env.GOOGLE_API_KEY_1,
+      process.env.GOOGLE_API_KEY_2,
+    ].filter((key): key is string => key !== undefined && key !== '');
+
+    this.keys = keys;
     console.log(`🔑 Loaded ${this.keys.length} Google keys`);
   }
 
