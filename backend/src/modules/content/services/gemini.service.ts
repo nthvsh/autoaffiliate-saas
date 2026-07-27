@@ -1,7 +1,8 @@
 import Groq from 'groq-sdk';
 // ✅ Fixed import path (3 levels up to src/config)
 import { getGeminiModel } from '../../../config/gemini';
-import { getGroqClient } from '../../../config/groq';  // ✅ NEW: Import Groq client
+import { getGroqClient } from '../../../config/groq';
+import { googleKeyManager } from '../../../config/google-keys';  // ✅ Google keys loaded
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -120,8 +121,26 @@ Return as JSON with fields: title, content, excerpt, category, tags.
       return parseBlogResponse(content, niche);
       
     } catch (geminiError: any) {
+      // If Gemini also fails, try Google Custom Search (if needed)
       console.error(`❌ Gemini also failed: ${geminiError.message}`);
-      throw new Error(`Both Groq and Gemini failed. Groq: ${groqError.message}, Gemini: ${geminiError.message}`);
+      console.log('🔄 Google Custom Search as last resort...');
+      
+      try {
+        const googleKey = googleKeyManager.getNextKey();
+        if (!googleKey) throw new Error('No Google API keys available');
+        
+        console.log(`🔑 Using Google key: ${googleKey.substring(0, 10)}...`);
+        // ✅ If you have a custom search function, call it here
+        // const googleResult = await searchWithGoogle(googleKey, niche);
+        // return parseBlogResponse(googleResult, niche);
+        
+        // ❌ If no custom search, throw error
+        throw new Error('Google Custom Search fallback not implemented yet');
+        
+      } catch (googleError: any) {
+        console.error(`❌ All providers failed: ${googleError.message}`);
+        throw new Error(`All providers failed. Groq: ${groqError.message}, Gemini: ${geminiError.message}, Google: ${googleError.message}`);
+      }
     }
   }
 };
