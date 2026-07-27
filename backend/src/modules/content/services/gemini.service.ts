@@ -145,7 +145,7 @@ Return as JSON with fields: title, content, excerpt, category, tags.
 
 const parseBlogResponse = (content: string, niche: string) => {
   try {
-    // 1. Try to extract JSON from markdown code blocks
+    // 1. Remove markdown code blocks (```json ... ```)
     let jsonString = content;
     const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
     if (codeBlockMatch) {
@@ -156,6 +156,7 @@ const parseBlogResponse = (content: string, niche: string) => {
     const jsonMatch = jsonString.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
+      // ✅ Extract fields with fallbacks
       return {
         title: parsed.title || `${niche} - Complete Guide`,
         content: parsed.content || content,
@@ -173,7 +174,7 @@ const parseBlogResponse = (content: string, niche: string) => {
   let title = `${niche} - Complete Guide`;
   if (lines.length > 0) {
     const firstLine = lines[0].replace(/^#+\s*/, '').trim();
-    if (firstLine) title = firstLine;
+    if (firstLine && !firstLine.startsWith('```')) title = firstLine;
   }
 
   return {
