@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import axios from 'axios';
 import { Dashboard } from './pages/Dashboard';
+import { Blog } from './pages/Blog';
+import { BlogPost } from './pages/BlogPost';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-function App() {
+function HomePage() {
   const [form, setForm] = useState({
     country: '',
     niche: '',
@@ -39,19 +42,43 @@ function App() {
 
   return (
     <div>
-      <div style={{ textAlign: 'center', margin: '20px 0' }}>
-        <button 
-          onClick={() => setShowDashboard(!showDashboard)}
-          style={{ padding: '10px 25px', background: showDashboard ? '#007bff' : '#28a745', color: '#fff', border: 'none', borderRadius: 5, cursor: 'pointer', fontSize: '16px' }}
-        >
-          {showDashboard ? '📝 Back to Campaign' : '📊 View Dashboard'}
-        </button>
+      {/* Navigation Bar */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        padding: '10px 30px',
+        background: '#1a3a6b',
+        color: '#fff',
+        marginBottom: '20px'
+      }}>
+        <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+          <h3 style={{ margin: 0 }}>🚀 AutoAffiliate</h3>
+          <Link to="/" style={{ color: '#fff', textDecoration: 'none' }}>🏠 Home</Link>
+          <Link to="/blog" style={{ color: '#fff', textDecoration: 'none' }}>📝 Blog</Link>
+        </div>
+        <div>
+          <button 
+            onClick={() => setShowDashboard(!showDashboard)}
+            style={{ 
+              padding: '8px 20px', 
+              background: showDashboard ? '#007bff' : '#28a745', 
+              color: '#fff', 
+              border: 'none', 
+              borderRadius: 5, 
+              cursor: 'pointer', 
+              fontSize: '14px' 
+            }}
+          >
+            {showDashboard ? '📝 Back to Campaign' : '📊 View Dashboard'}
+          </button>
+        </div>
       </div>
 
       {showDashboard ? (
         <Dashboard />
       ) : (
-        <div style={{ maxWidth: 600, margin: '50px auto', padding: 20, fontFamily: 'Arial' }}>
+        <div style={{ maxWidth: 600, margin: '0 auto', padding: 20, fontFamily: 'Arial' }}>
           <h2>🚀 Start Campaign</h2>
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: 15 }}>
@@ -109,6 +136,19 @@ function App() {
         </div>
       )}
     </div>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/blog" element={<Blog />} />
+        <Route path="/blog/:slug" element={<BlogPost />} />
+        <Route path="/dashboard/:campaignId" element={<Dashboard />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
