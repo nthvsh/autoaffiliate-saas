@@ -1,8 +1,7 @@
 import Groq from 'groq-sdk';
-// ✅ Fixed import path (3 levels up to src/config)
 import { getGeminiModel } from '../../../config/gemini';
 import { getGroqClient } from '../../../config/groq';
-import { googleKeyManager } from '../../../config/google-keys';  // ✅ Google keys loaded
+import { googleKeyManager } from '../../../config/google-keys';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -130,11 +129,8 @@ Return as JSON with fields: title, content, excerpt, category, tags.
         if (!googleKey) throw new Error('No Google API keys available');
         
         console.log(`🔑 Using Google key: ${googleKey.substring(0, 10)}...`);
-        // ✅ If you have a custom search function, call it here
-        // const googleResult = await searchWithGoogle(googleKey, niche);
-        // return parseBlogResponse(googleResult, niche);
-        
-        // ❌ If no custom search, throw error
+        // If you have a custom search function, call it here
+        // For now, throw error as fallback not implemented
         throw new Error('Google Custom Search fallback not implemented yet');
         
       } catch (googleError: any) {
@@ -145,10 +141,19 @@ Return as JSON with fields: title, content, excerpt, category, tags.
   }
 };
 
-// Helper function to parse blog response
+// ==================== IMPROVED JSON PARSER ====================
+
 const parseBlogResponse = (content: string, niche: string) => {
   try {
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    // 1. Try to extract JSON from markdown code blocks
+    let jsonString = content;
+    const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (codeBlockMatch) {
+      jsonString = codeBlockMatch[1].trim();
+    }
+    
+    // 2. Find JSON object
+    const jsonMatch = jsonString.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
       return {
@@ -162,9 +167,17 @@ const parseBlogResponse = (content: string, niche: string) => {
   } catch (e) {
     console.log('JSON parse failed, using fallback');
   }
-  
+
+  // 3. Fallback — extract title from first line (remove markdown headers)
+  const lines = content.split('\n').filter(line => line.trim() !== '');
+  let title = `${niche} - Complete Guide`;
+  if (lines.length > 0) {
+    const firstLine = lines[0].replace(/^#+\s*/, '').trim();
+    if (firstLine) title = firstLine;
+  }
+
   return {
-    title: `${niche} - Complete Guide`,
+    title: title,
     content: content,
     excerpt: content.substring(0, 200),
     category: 'General',
