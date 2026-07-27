@@ -1,5 +1,4 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-
 // Load all Gemini keys from environment
 const geminiKeys = [
   process.env.GEMINI_API_KEY,
