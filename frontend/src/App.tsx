@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import { HashRouter, Routes, Route, Link } from 'react-router-dom';  // ✅ Changed to HashRouter
 import axios from 'axios';
 import { Dashboard } from './pages/Dashboard';
 import { Blog } from './pages/Blog';
@@ -141,14 +141,14 @@ function HomePage() {
 
 function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>  {/* ✅ Changed to HashRouter */}
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:slug" element={<BlogPost />} />
         <Route path="/dashboard/:campaignId" element={<Dashboard />} />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
 
