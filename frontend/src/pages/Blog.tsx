@@ -13,6 +13,23 @@ interface BlogPost {
   published_at: string;
 }
 
+// ✅ Helper: Parse excerpt (JSON or plain text)
+const parseExcerpt = (excerpt: string): string => {
+  if (!excerpt) return 'No excerpt available';
+  try {
+    const parsed = JSON.parse(excerpt);
+    // If parsed is an object with content/excerpt field
+    if (parsed.content) return parsed.content.substring(0, 200);
+    if (parsed.excerpt) return parsed.excerpt.substring(0, 200);
+    // If parsed is a string
+    if (typeof parsed === 'string') return parsed.substring(0, 200);
+    return excerpt.substring(0, 200);
+  } catch {
+    // Not JSON, use as is
+    return excerpt.substring(0, 200);
+  }
+};
+
 export const Blog = () => {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,7 +61,7 @@ export const Blog = () => {
             <Link to={`/blog/${post.slug}`} style={{ textDecoration: 'none', color: '#1a3a6b' }}>
               <h2>{post.title}</h2>
             </Link>
-            <p style={{ color: '#666' }}>{post.excerpt || 'No excerpt available'}</p>
+            <p style={{ color: '#666' }}>{parseExcerpt(post.excerpt)}...</p>
             <small>Niche: {post.niche} | {new Date(post.published_at).toLocaleDateString()}</small>
           </div>
         ))
