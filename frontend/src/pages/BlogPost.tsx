@@ -13,6 +13,22 @@ interface BlogPost {
   published_at: string;
 }
 
+// ✅ Helper: Parse content (JSON or plain text)
+const parseContent = (content: string): string => {
+  if (!content) return '';
+  try {
+    const parsed = JSON.parse(content);
+    // If parsed is an object with content field
+    if (parsed.content) return parsed.content;
+    // If parsed is a string
+    if (typeof parsed === 'string') return parsed;
+    return content;
+  } catch {
+    // Not JSON, use as is
+    return content;
+  }
+};
+
 export const BlogPost = () => {
   const { slug } = useParams();
   const [post, setPost] = useState<BlogPost | null>(null);
@@ -35,13 +51,15 @@ export const BlogPost = () => {
   if (loading) return <div style={{ textAlign: 'center', padding: 50 }}>Loading...</div>;
   if (!post) return <div style={{ textAlign: 'center', padding: 50 }}>Post not found</div>;
 
+  const displayContent = parseContent(post.content);
+
   return (
     <div style={{ maxWidth: 800, margin: '50px auto', padding: 20, fontFamily: 'Arial' }}>
       <Link to="/blog" style={{ textDecoration: 'none', color: '#1a3a6b' }}>← Back to Blog</Link>
       <h1>{post.title}</h1>
       <small>Published: {new Date(post.published_at).toLocaleDateString()}</small>
       <hr />
-      <div style={{ whiteSpace: 'pre-wrap' }}>{post.content}</div>
+      <div style={{ whiteSpace: 'pre-wrap' }}>{displayContent}</div>
       <hr />
       <div style={{ background: '#f0f4fb', padding: 20, borderRadius: 10, textAlign: 'center' }}>
         <p>Learn more about {post.niche}:</p>
