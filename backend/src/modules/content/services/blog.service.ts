@@ -12,10 +12,12 @@ export const generateAndSaveBlogPost = async (campaignId: string, niche: string,
     console.log(`📝 Generating blog post for campaign: ${campaignId}`);
     const blogData = await generateBlogPost(niche, affiliateLink);
     
+    // ✅ FIX: Add timestamp to make slug unique
+    const timestamp = Date.now();
     const slug = blogData.title
       .toLowerCase()
       .replace(/[^a-z0-9\s]/g, '')
-      .replace(/\s+/g, '-');
+      .replace(/\s+/g, '-') + '-' + timestamp;
 
     // ✅ Using admin client to bypass RLS
     const { data, error } = await supabaseAdmin
