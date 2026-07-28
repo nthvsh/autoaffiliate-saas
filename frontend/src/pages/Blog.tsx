@@ -13,37 +13,65 @@ interface BlogPost {
   published_at: string;
 }
 
-// ✅ Robust parser — handles "json prefix, markdown, plain JSON
+// ✅ Ultimate parser — extracts clean text from any JSON-like format
 const parseExcerpt = (excerpt: string): string => {
   if (!excerpt) return 'No excerpt available';
   
   let cleanStr = excerpt.trim();
   
-  // Remove "json prefix (if present)
+  // 1. Remove "json prefix
   if (cleanStr.startsWith('"json')) {
-    cleanStr = cleanStr.substring(5).trim(); // Remove "json
+    cleanStr = cleanStr.substring(5).trim();
   }
   
-  // Remove markdown code blocks
+  // 2. Remove markdown code blocks
   const codeBlockMatch = cleanStr.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (codeBlockMatch) {
     cleanStr = codeBlockMatch[1].trim();
   }
   
-  // Try to parse as JSON
+  // 3. Try to parse as full JSON
   if (cleanStr.startsWith('{')) {
     try {
       const parsed = JSON.parse(cleanStr);
-      if (parsed.content) return parsed.content.substring(0, 200);
-      if (parsed.excerpt) return parsed.excerpt.substring(0, 200);
-      if (typeof parsed === 'string') return parsed.substring(0, 200);
+      // Extract content or excerpt
+      let extracted = parsed.content || parsed.excerpt || parsed;
+      if (typeof extracted === 'string') {
+        // Clean any remaining JSON artifacts
+        extracted = extracted.replace(/^"json\s*/, '').trim();
+        return extracted.substring(0, 200);
+      }
       return cleanStr.substring(0, 200);
     } catch (e) {
-      console.log('Failed to parse JSON, using as is');
+      // Not full JSON, continue
     }
   }
   
-  return cleanStr.substring(0, 200);
+  // 4. Try to find "content": "..." pattern (even without outer braces)
+  const contentMatch = cleanStr.match(/"content":\s*"([^"]*)"/);
+  if (contentMatch && contentMatch[1]) {
+    let text = contentMatch[1];
+    // Remove any escaped quotes or artifacts
+    text = text.replace(/\\"/g, '"').trim();
+    return text.substring(0, 200);
+  }
+  
+  // 5. Try to find "excerpt": "..." pattern
+  const excerptMatch = cleanStr.match(/"excerpt":\s*"([^"]*)"/);
+  if (excerptMatch && excerptMatch[1]) {
+    let text = excerptMatch[1];
+    text = text.replace(/\\"/g, '"').trim();
+    return text.substring(0, 200);
+  }
+  
+  // 6. Fallback: remove any JSON-like structure
+  let fallback = cleanStr
+    .replace(/^["{]/g, '') // remove leading quotes or braces
+    .replace(/["}]$/g, '') // remove trailing quotes or braces
+    .replace(/\\"/g, '"')
+    .trim();
+  
+  return fallback.substring(0, 200) || 'No excerpt available';
 };
 
 // ✅ Helper: Clean title
@@ -67,13 +95,20 @@ const parseTitle = (title: string): string => {
   if (cleanStr.startsWith('{')) {
     try {
       const parsed = JSON.parse(cleanStr);
-      return parsed.title || cleanStr;
+      return parsed.title || parsed || 'Blog Post';
     } catch (e) {
-      // Not JSON, use as is
+      // Not JSON, continue
     }
   }
   
-  return cleanStr;
+  // If it's a JSON-like string with "title":, extract it
+  const titleMatch = cleanStr.match(/"title":\s*"([^"]*)"/);
+  if (titleMatch && titleMatch[1]) {
+    return titleMatch[1];
+  }
+  
+  // Remove any remaining JSON artifacts
+  return cleanStr.replace(/^["{]/g, '').replace(/["}]$/g, '').trim() || 'Blog Post';
 };
 
 export const Blog = () => {
