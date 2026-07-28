@@ -13,21 +13,32 @@ interface BlogPost {
   published_at: string;
 }
 
-// ✅ Helper: Parse excerpt (JSON or plain text)
+// ✅ Helper: Parse excerpt (handles JSON and plain text)
 const parseExcerpt = (excerpt: string): string => {
   if (!excerpt) return 'No excerpt available';
-  try {
-    const parsed = JSON.parse(excerpt);
-    // If parsed is an object with content/excerpt field
-    if (parsed.content) return parsed.content.substring(0, 200);
-    if (parsed.excerpt) return parsed.excerpt.substring(0, 200);
-    // If parsed is a string
-    if (typeof parsed === 'string') return parsed.substring(0, 200);
-    return excerpt.substring(0, 200);
-  } catch {
-    // Not JSON, use as is
-    return excerpt.substring(0, 200);
+  
+  // If it looks like JSON, parse it
+  if (excerpt.trim().startsWith('{') || excerpt.trim().startsWith('```json')) {
+    try {
+      let jsonStr = excerpt;
+      // Remove markdown code blocks
+      const codeBlockMatch = excerpt.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (codeBlockMatch) {
+        jsonStr = codeBlockMatch[1].trim();
+      }
+      const parsed = JSON.parse(jsonStr);
+      // Extract excerpt or content
+      if (parsed.excerpt) return parsed.excerpt.substring(0, 200);
+      if (parsed.content) return parsed.content.substring(0, 200);
+      if (typeof parsed === 'string') return parsed.substring(0, 200);
+      return excerpt.substring(0, 200);
+    } catch (e) {
+      console.log('Failed to parse excerpt JSON, using as is');
+      return excerpt.substring(0, 200);
+    }
   }
+  
+  return excerpt.substring(0, 200);
 };
 
 export const Blog = () => {
