@@ -21,7 +21,7 @@ import { detectPainPoints } from './modules/intelligence/services/pain.service';
 import { scoreIntent } from './modules/intelligence/services/intent.service';
 import { generateReply } from './modules/content/services/gemini.service';
 import { generateAndSaveBlogPost } from './modules/content/services/blog.service';
-import { startBlogScheduler } from '../blogScheduler';  // ✅ ADD THIS LINE
+import { startBlogScheduler } from './workers/blogScheduler';  // ✅ Fixed import path
 
 dotenv.config();
 
@@ -184,7 +184,7 @@ app.use('/api/blog', blogRoutes);
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   startScheduler();
-  startBlogScheduler();  // ✅ ADD THIS LINE
+  startBlogScheduler();  // ✅ Blog scheduler started
 }).on('error', (err) => {
   console.error('❌ Server error:', err);
 });
