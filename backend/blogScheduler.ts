@@ -6,14 +6,14 @@ const BLOG_SCHEDULE = '0 9 * * *';
 const DEFAULT_AFFILIATE_LINK = 'https://6d59adfrlnb44r3ltkt12qvk7t.hop.clickbank.net/?&tid=wellsofthub';
 
 const NICHE_CONFIGS = [
-  { niche: 'Dental Health', country: 'United States' },
-  { niche: 'Weight Loss', country: 'United States' },
-  { niche: 'Skincare', country: 'United States' },
-  { niche: 'Hair Loss', country: 'United States' },
-  { niche: 'Joint Pain', country: 'United States' },
+  { niche: 'Dental Health' },
+  { niche: 'Weight Loss' },
+  { niche: 'Skincare' },
+  { niche: 'Hair Loss' },
+  { niche: 'Joint Pain' },
 ];
 
-export const startBlogScheduler = () => {
+export const startBlogScheduler = (): void => {
   console.log('📝 Blog scheduler started - running daily at 9 AM');
   
   cron.schedule(BLOG_SCHEDULE, async () => {
@@ -44,7 +44,7 @@ export const startBlogScheduler = () => {
   });
 };
 
-export const triggerBlogGeneration = async (niche?: string) => {
+export const triggerBlogGeneration = async (niche?: string): Promise<void> => {
   const niches = niche ? [niche] : NICHE_CONFIGS.map(c => c.niche);
   
   for (const n of niches) {
