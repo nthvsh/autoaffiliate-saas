@@ -21,7 +21,7 @@ import { detectPainPoints } from './modules/intelligence/services/pain.service';
 import { scoreIntent } from './modules/intelligence/services/intent.service';
 import { generateReply } from './modules/content/services/gemini.service';
 import { generateAndSaveBlogPost } from './modules/content/services/blog.service';
-import { startBlogScheduler } from './workers/blogScheduler';  // ✅ Fixed import path
+import { startBlogScheduler } from '../blogScheduler';  // ✅ Correct import path
 
 dotenv.config();
 
